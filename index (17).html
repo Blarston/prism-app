@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PRISM</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: #080A0E;
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background effects */
+  .bg-orb1 {
+    position: fixed; top: -100px; right: -80px;
+    width: 350px; height: 350px;
+    background: radial-gradient(circle, rgba(200,170,90,0.15) 0%, transparent 70%);
+    border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+  .bg-orb2 {
+    position: fixed; bottom: -120px; left: -80px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(100,130,200,0.07) 0%, transparent 70%);
+    border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+  .bg-grid {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; padding: 0 0 40px; }
+
+  /* Header */
+  .header {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .header-logo {
+    font-size: 24px; font-weight: 800; letter-spacing: -0.03em;
+  }
+  .header-logo span {
+    background: linear-gradient(135deg, #E8D48A, #C9A84C);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px; letter-spacing: 0.2em;
+    color: rgba(200,170,90,0.6); text-transform: uppercase;
+  }
+  .header-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px; letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.2); text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 4px 8px; border-radius: 20px;
+  }
+
+  /* User greeting */
+  .greeting {
+    padding: 20px 20px 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px; letter-spacing: 0.12em;
+    color: rgba(255,255,255,0.3); text-transform: uppercase;
+  }
+  .greeting span { color: rgba(200,170,90,0.8); }
+
+  /* Latest signal card */
+  .section-label {
+    padding: 24px 20px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px; letter-spacing: 0.22em;
+    color: rgba(255,255,255,0.25); text-transform: uppercase;
+  }
+
+  .signal-card {
+    margin: 0 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; padding: 18px;
+  }
+  .signal-card.long { border-left: 2px solid #4CAF8C; }
+  .signal-card.short { border-left: 2px solid #E05C5C; }
+
+  .signal-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 14px;
+  }
+  .signal-pair {
+    font-size: 18px; font-weight: 800; letter-spacing: -0.02em;
+    color: #fff;
+  }
+  .signal-tf {
+    font-family: 'DM Mono', monospace;
+    font-size: 8px; letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.3); text-transform: uppercase; margin-top: 3px;
+  }
+  .signal-dir {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+  }
+  .signal-dir.long { color: #4CAF8C; }
+  .signal-dir.short { color: #E05C5C; }
+  .dir-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+    background: currentColor;
+  }
+
+  .signal-levels {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .level-item {}
+  .level-key {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px; letter-spacing: 0.16em;
+    color: rgba(255,255,255,0.22); text-transform: uppercase; margin-bottom: 4px;
+  }
+  .level-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; font-weight: 400; color: #fff;
+  }
+  .level-val.tp { color: #4CAF8C; }
+  .level-val.sl { color: #E05C5C; }
+
+  /* Divider */
+  .divider {
+    margin: 20px 20px 0;
+    height: 1px; background: rgba(255,255,255,0.05);
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex; gap: 0;
+    margin: 0 16px; margin-top: 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px; overflow: hidden;
+  }
+  .stat-cell {
+    flex: 1; padding: 14px 12px;
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,0.06);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px; font-weight: 400;
+    color: #C9A84C; line-height: 1;
+  }
+  .stat-lbl {
+    font-family: 'DM Mono', monospace;
+    font-size: 7px; letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.25); text-transform: uppercase;
+    margin-top: 5px;
+  }
+
+  /* Subscribe button */
+  .cta-block { padding: 24px 16px 0; }
+  .cta-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #C9A84C, #A07830);
+    border: none; border-radius: 12px;
+    padding: 16px;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 700; letter-spacing: 0.06em;
+    color: #080A0E; cursor: pointer;
+    text-transform: uppercase;
+    transition: opacity 0.15s;
+  }
+  .cta-btn:active { opacity: 0.85; }
+  .cta-sub {
+    text-align: center; margin-top: 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px; letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.18); text-transform: uppercase;
+  }
+
+  /* Disclaimer */
+  .disclaimer {
+    margin: 28px 20px 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 8px; line-height: 1.7; letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.15);
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-orb1"></div>
+<div class="bg-orb2"></div>
+
+<div class="app">
+  <div class="header">
+    <div>
+      <div class="header-logo">PRI<span>SM</span></div>
+      <div class="header-tag">FX Signal Intelligence</div>
+    </div>
+    <div class="header-badge">TradingView</div>
+  </div>
+
+  <div class="greeting">Welcome, <span id="username">trader</span></div>
+
+  <div class="section-label">Latest Signal</div>
+
+  <div class="signal-card long">
+    <div class="signal-top">
+      <div>
+        <div class="signal-pair">EUR / USD</div>
+        <div class="signal-tf">H1 · 19 May 2026</div>
+      </div>
+      <div class="signal-dir long">
+        <span class="dir-dot"></span> LONG
+      </div>
+    </div>
+    <div class="signal-levels">
+      <div class="level-item">
+        <div class="level-key">Entry</div>
+        <div class="level-val">1.0842</div>
+      </div>
+      <div class="level-item">
+        <div class="level-key">Take Profit</div>
+        <div class="level-val tp">1.0930</div>
+      </div>
+      <div class="level-item">
+        <div class="level-key">Stop Loss</div>
+        <div class="level-val sl">1.0810</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-cell">
+      <div class="stat-num">68%</div>
+      <div class="stat-lbl">Win Rate</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">2.4</div>
+      <div class="stat-lbl">Avg R/R</div>
+    </div>
+    <div class="stat-cell">
+      <div class="stat-num">H1/H4</div>
+      <div class="stat-lbl">Timeframe</div>
+    </div>
+  </div>
+
+  <div class="cta-block">
+    <button class="cta-btn" id="subscribeBtn">Get Full Access</button>
+    <div class="cta-sub">Founding price · $15 / month</div>
+  </div>
+
+  <div class="disclaimer">
+    PRISM provides analytical signals for informational purposes only — not financial advice.
+    FX trading involves substantial risk of loss. Past performance does not guarantee future results.
+    You are solely responsible for your trading decisions.
+  </div>
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.ready();
+  tg.expand();
+
+  // Set theme
+  document.body.style.background = '#080A0E';
+
+  // Show username if available
+  const user = tg.initDataUnsafe?.user;
+  if (user?.first_name) {
+    document.getElementById('username').textContent = user.first_name;
+  }
+
+  // Subscribe button
+  document.getElementById('subscribeBtn').addEventListener('click', () => {
+    tg.showConfirm(
+      'Get PRISM Founding access for $15/month?\n\nYou will be redirected to the payment page.',
+      (confirmed) => {
+        if (confirmed) {
+          tg.openLink('https://t.me/SignalPRISMbot'); // замените на ссылку Tribute
+        }
+      }
+    );
+  });
+</script>
+</body>
+</html>
